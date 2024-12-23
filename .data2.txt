@@ -1,0 +1,125 @@
+    .data
+prompt_vector1: .asciiz "Enter integer values one per line.\n"
+newline:        .asciiz "\n"
+number_of_elements_prompt: .asciiz "Number of elements: "
+vector1:       .space 40     # space for 10 integers (4 bytes each)
+vector2:       .space 40     # space for 10 integers (4 bytes each)
+
+    .text
+    .globl main
+
+main:
+    # Prompt for the number of elements
+    li $v0, 4                  # syscall for printing a string
+    la $a0, number_of_elements_prompt   # load address of the number prompt
+    syscall                     # print "Number of elements: "
+
+    li $v0, 5                  # syscall for reading an integer
+    syscall                     # read the number of elements
+    move $t0, $v0              # store the number of elements in $t0
+
+    # Check if the number of elements is valid (between 1 and 10)
+    li $t1, 1
+    blt $t0, $t1, error_invalid  # if $t0 < 1, go to error
+    li $t1, 10
+    bgt $t0, $t1, error_invalid  # if $t0 > 10, go to error
+
+    # Print the prompt for the first vector without using %d
+    li $v0, 4                  # syscall for printing a string
+    la $a0, prompt_vector1      # load address of the first prompt
+    syscall                     # print the string
+
+    # Read elements for the first vector
+    move $t2, $t0              # $t2 holds the number of elements (n)
+    la $t3, vector1            # $t3 points to the start of vector1 array
+read_vector1_loop:
+    beqz $t2, read_vector2_prompt  # if all elements are read, go to the next prompt
+    li $v0, 5                  # syscall for reading an integer
+    syscall
+    sw $v0, 0($t3)             # store the input in vector1
+    addi $t3, $t3, 4           # move to the next element in vector1
+    addi $t2, $t2, -1          # decrement the counter
+    j read_vector1_loop        # repeat until all elements are read
+
+read_vector2_prompt:
+    # Print the second vector prompt
+    li $v0, 4                  # syscall for printing a string
+    la $a0, prompt_vector1      # reuse the same prompt message
+    syscall                     # print "Enter integer values one per line."
+
+    # Read elements for the second vector
+    move $t2, $t0              # $t2 holds the number of elements (n)
+    la $t3, vector2            # $t3 points to the start of vector2 array
+read_vector2_loop:
+    beqz $t2, compute_sum_and_product  # if all elements are read, go to sum/product calculation
+    li $v0, 5                  # syscall for reading an integer
+    syscall
+    sw $v0, 0($t3)             # store the input in vector2
+    addi $t3, $t3, 4           # move to the next element in vector2
+    addi $t2, $t2, -1          # decrement the counter
+    j read_vector2_loop        # repeat until all elements are read
+
+compute_sum_and_product:
+    # Print vector sum
+    li $v0, 4                  # syscall for printing a string
+    la $a0, newline            # load the newline string
+    syscall
+
+    move $t2, $t0              # number of elements
+    la $t3, vector1            # $t3 points to vector1
+    la $t4, vector2            # $t4 points to vector2
+print_sum_loop:
+    beqz $t2, print_product_prompt  # if all elements are processed, go to product output
+    lw $t5, 0($t3)             # load element from vector1
+    lw $t6, 0($t4)             # load element from vector2
+    add $t7, $t5, $t6          # calculate the sum
+    move $a0, $t7              # move the sum into $a0 for printing
+    li $v0, 1                  # syscall for printing an integer
+    syscall                     # print the sum
+
+    li $v0, 4                  # syscall for printing a string
+    la $a0, newline             # print newline
+    syscall
+
+    addi $t3, $t3, 4           # move to the next element in vector1
+    addi $t4, $t4, 4           # move to the next element in vector2
+    addi $t2, $t2, -1          # decrement the counter
+    j print_sum_loop           # repeat until all elements are printed
+
+print_product_prompt:
+    # Print vector product
+    li $v0, 4                  # syscall for printing a string
+    la $a0, newline            # load the newline string
+    syscall
+
+    move $t2, $t0              # number of elements
+    la $t3, vector1            # $t3 points to vector1
+    la $t4, vector2            # $t4 points to vector2
+print_product_loop:
+    beqz $t2, end_program      # if all elements are processed, end the program
+    lw $t5, 0($t3)             # load element from vector1
+    lw $t6, 0($t4)             # load element from vector2
+    mul $t7, $t5, $t6          # calculate the product
+    move $a0, $t7              # move the product into $a0 for printing
+    li $v0, 1                  # syscall for printing an integer
+    syscall                     # print the product
+
+    li $v0, 4                  # syscall for printing a string
+    la $a0, newline             # print newline
+    syscall
+
+    addi $t3, $t3, 4           # move to the next element in vector1
+    addi $t4, $t4, 4           # move to the next element in vector2
+    addi $t2, $t2, -1          # decrement the counter
+    j print_product_loop       # repeat until all elements are printed
+
+end_program:
+    li $v0, 10                 # syscall for exit
+    syscall
+
+error_invalid:
+    li $v0, 4                  # syscall for printing a string
+    la $a0, newline            # print an error message or newline
+    syscall
+    li $v0, 10                 # syscall for exit
+    syscall

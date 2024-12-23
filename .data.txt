@@ -1,0 +1,52 @@
+.data
+prompt: 
+
+
+	.asciiz "Please enter an integer: "
+largest_value_msg:
+	.asciiz "Largest value you entered: "
+newline:
+	.asciiz "\n"
+.text
+.globl main
+main: 
+	li $t0, -1
+
+read_input:
+	# Print the prompt
+	li $v0, 4
+	la $a0, prompt
+	syscall
+	# Read in integer from the user
+	li $v0, 5
+	syscall
+	# Check if the input is negative, if it is, 
+	#   jump to the largest_value label
+	move $t1, $v0
+	slt $t2, $t1, $zero
+	bne $t2, $zero, largest_value
+	# Compare the current input with the previous 
+	#   input. If current input is greater than older
+	#   value set it to the current input
+	slt $t2, $t0, $t1
+	beq $t2, $zero, read_input
+	# Set new largest value
+	move $t0, $t1
+	j read_input
+
+largest_value:
+	# Print string largest value
+	li $v0, 4
+	la $a0, largest_value_msg
+	syscall
+	# Print the largest number
+	move $a0, $t0
+	li $v0, 1
+	syscall
+	# Print newline
+	li $v0, 4
+	la $a0, newline
+	syscall
+	# Exit
+	li $v0, 10
+	syscall
